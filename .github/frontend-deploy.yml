@@ -1,0 +1,45 @@
+name : Build and Deploy Frotend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-deploy.yml"
+
+env:
+  AWS_REGION: ${{secrets.AWS_REGION}}
+  S3_BUCKET: ${{secrets.S3_BUCKET}}
+  CLOUDFRONT_DISTRIBUTION_ID: ${{secrets.CLOUDFRONT_DISTRIBUTION_ID}}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: ./frontend
+
+      - name: Build Frontend App
+        working-directory: ./frontend
+        env:
+          VITE_API_URL: ${{secrets.API_BASE_URL}}
+        run: npm run build
+
+      - name: Configure AWS 
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync to S3
+        run: aws s3 sync frontend/dist "s3://${{ env.S3_BUCKET }}" --delete
+
