@@ -2,37 +2,41 @@ name: Build and Deploy Frontend
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend-deploy.yml'
 
 env:
-  AWS_REGION: ${{secrets.AWS_REGION}}
-  S3_BUCKET: ${{secrets.S3_BUCKET}}
-  CLOUDFRONT_DISTRIBUTION_ID: ${{secrets.CLOUDFRONT_DISTRIBUTION_ID}}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  S3_BUCKET: ${{ secrets.S3_BUCKET }}
+  CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
       - name: Install Dependencies
-        run: npm install
         working-directory: ./frontend
+        run: npm install
 
       - name: Build Frontend App
         working-directory: ./frontend
         env:
-          VITE_API_URL: ${{secrets.API_BASE_URL}}
+          VITE_API_URL: ${{ secrets.API_BASE_URL }}
         run: npm run build
 
-      - name: Configure AWS 
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -40,5 +44,4 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Sync to S3
-        run: aws s3 sync frontend/dist "s3://${{ env.S3_BUCKET }}" --delete
-
+        run: aws s3 sync frontend/dist s3://${{ env.S3_BUCKET }} --delete
