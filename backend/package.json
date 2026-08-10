@@ -1,0 +1,13 @@
+{
+  "name": "devops-quiz-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n \"gateway,user,quiz,result\" -c \"cyan,blue,yellow,magenta\" \"npm --prefix api-gateway-service run dev\" \"npm --prefix user-service run dev\" \"npm --prefix quiz-service run dev\" \"npm --prefix result-service run dev\"",
+    "start": "concurrently -n \"gateway,user,quiz,result\" -c \"cyan,blue,yellow,magenta\" \"npm --prefix api-gateway-service start\" \"npm --prefix user-service start\" \"npm --prefix quiz-service start\" \"npm --prefix result-service start\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

@@ -1,0 +1,246 @@
+{
+  "info": {
+    "_postman_id": "a9b8c7d6-e5f4-4321-8765-1234567890ab",
+    "name": "DevOps & Cloud Quiz Microservices API",
+    "description": "Complete Postman collection for testing the DevOps & Cloud Engineering Quiz microservices backend (API Gateway, User Service, Quiz Service, Result Service).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Gateway Health",
+      "item": [
+        {
+          "name": "API Gateway Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Checks health of API Gateway and all 3 underlying microservices."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1. User Service",
+      "item": [
+        {
+          "name": "Register or Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"AlexCloudDev\",\n  \"avatar\": \"⚡\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Registers a new engineer handle & avatar, or fetches existing profile from UsersTable."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/AlexCloudDev",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "AlexCloudDev"]
+            },
+            "description": "Fetches profile stats for a specific username."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Quiz Service",
+      "item": [
+        {
+          "name": "Get Random Quiz Questions (5)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/quizzes/random?count=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "quizzes", "random"],
+              "query": [
+                {
+                  "key": "count",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Fetches 5 random questions. Correct answers and explanations are stripped for client security."
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Quiz Answers for Server Grading",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    {\n      \"question_id\": \"q_docker_001\",\n      \"selectedOption\": 1\n    },\n    {\n      \"question_id\": \"q_k8s_001\",\n      \"selectedOption\": 0\n    },\n    {\n      \"question_id\": \"q_cicd_001\",\n      \"selectedOption\": 1\n    },\n    {\n      \"question_id\": \"q_iac_001\",\n      \"selectedOption\": 1\n    },\n    {\n      \"question_id\": \"q_linux_001\",\n      \"selectedOption\": 0\n    }\n  ],\n  \"timeTaken\": 34\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/quizzes/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "quizzes", "submit"]
+            },
+            "description": "Evaluates submitted answer keys server-side and returns score, accuracy %, and explanations."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin Seed Question Pool",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/quizzes/seed",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "quizzes", "seed"]
+            },
+            "description": "Populates the QuestionsTable with initial DevOps questions."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Result Service",
+      "item": [
+        {
+          "name": "Save Quiz Result",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"AlexCloudDev\",\n  \"avatar\": \"⚡\",\n  \"score\": 5,\n  \"total\": 5,\n  \"timeTaken\": 34\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/results",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "results"]
+            },
+            "description": "Persists assessment outcome into QuizResultsTable, awards performance badge, and computes global leaderboard rank."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Global Leaderboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/leaderboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "leaderboard"]
+            },
+            "description": "Retrieves Hall of Fame global leaderboard sorted by score DESC and timeTaken ASC."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Attempt History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/results/user/AlexCloudDev",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "results", "user", "AlexCloudDev"]
+            },
+            "description": "Fetches past assessment attempts for a given username."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Direct Microservices Health",
+      "item": [
+        {
+          "name": "User Service Direct Health Check (Port 8001)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8001/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8001",
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Quiz Service Direct Health Check (Port 8002)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8002/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8002",
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Result Service Direct Health Check (Port 8003)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8003/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8003",
+              "path": ["health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

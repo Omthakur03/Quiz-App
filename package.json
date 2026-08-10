@@ -1,0 +1,15 @@
+{
+  "name": "devops-quiz-root",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:all": "concurrently -n \"backend,frontend\" -c \"magenta,cyan\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:frontend": "npm --prefix frontend run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

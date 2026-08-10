@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: devops-quiz-dynamodb
+    ports:
+      - "8000:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ."
+    volumes:
+      - dynamodb_data:/home/dynamodblocal/data
+
+  api-gateway-service:
+    build: ./backend/api-gateway-service
+    container_name: devops-quiz-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - USER_SERVICE_URL=http://user-service:8001
+      - QUIZ_SERVICE_URL=http://quiz-service:8002
+      - RESULT_SERVICE_URL=http://result-service:8003
+    depends_on:
+      - user-service
+      - quiz-service
+      - result-service
+
+  user-service:
+    build: ./backend/user-service
+    container_name: devops-quiz-user-service
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=fakeAccessKeyId
+      - AWS_SECRET_ACCESS_KEY=fakeSecretAccessKey
+    depends_on:
+      - dynamodb-local
+
+  quiz-service:
+    build: ./backend/quiz-service
+    container_name: devops-quiz-quiz-service
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=fakeAccessKeyId
+      - AWS_SECRET_ACCESS_KEY=fakeSecretAccessKey
+    depends_on:
+      - dynamodb-local
+
+  result-service:
+    build: ./backend/result-service
+    container_name: devops-quiz-result-service
+    ports:
+      - "8003:8003"
+    environment:
+      - PORT=8003
+      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=fakeAccessKeyId
+      - AWS_SECRET_ACCESS_KEY=fakeSecretAccessKey
+    depends_on:
+      - dynamodb-local
+
+volumes:
+  dynamodb_data:
