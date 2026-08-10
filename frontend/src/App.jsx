@@ -16,12 +16,14 @@ export default function App() {
   const [selectedHistoryUser, setSelectedHistoryUser] = useState(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [appError, setAppError] = useState(null);
 
   const [currentUser, setCurrentUser] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [quizResults, setQuizResults] = useState(null);
 
   const handleStartQuizClick = async () => {
+    setAppError(null);
     if (currentUser) {
       await handleRetakeQuiz();
     } else {
@@ -36,6 +38,7 @@ export default function App() {
 
   const handleUsernameSubmitted = async (userInfo) => {
     setIsLoading(true);
+    setAppError(null);
     try {
       const user = await registerUserApi(userInfo);
       setCurrentUser(user);
@@ -54,6 +57,7 @@ export default function App() {
 
   const handleFinishQuiz = async (quizSummary) => {
     setIsLoading(true);
+    setAppError(null);
     try {
       // Evaluate submission (server-side or local fallback)
       const evaluation = await submitQuizAnswersApi({
@@ -87,6 +91,7 @@ export default function App() {
       setScreen("results");
     } catch (err) {
       console.error("Error finalizing quiz:", err);
+      setAppError(err.message || "Backend service is not working.");
     } finally {
       setIsLoading(false);
     }
@@ -95,10 +100,14 @@ export default function App() {
   const handleRetakeQuiz = async () => {
     if (currentUser) {
       setIsLoading(true);
+      setAppError(null);
       try {
         const quizQuestions = await getRandomQuizApi(5);
         setQuestions(quizQuestions);
         setScreen("quiz");
+      } catch (err) {
+        console.error("Error retaking quiz:", err);
+        setAppError(err.message || "Backend service is not working.");
       } finally {
         setIsLoading(false);
       }
@@ -116,6 +125,23 @@ export default function App() {
       />
 
       <main className="app-container">
+        {appError && (
+          <div className="error-banner" style={{
+            background: "rgba(239, 68, 68, 0.15)",
+            border: "1px solid rgba(239, 68, 68, 0.4)",
+            color: "#fca5a5",
+            padding: "0.85rem 1.25rem",
+            borderRadius: "var(--radius-md)",
+            marginBottom: "1.5rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between"
+          }}>
+            <span>⚠️ {appError}</span>
+            <button onClick={() => setAppError(null)} style={{ background: "none", border: "none", color: "#fca5a5", cursor: "pointer", fontSize: "1.1rem", padding: "0 0.5rem" }}>✕</button>
+          </div>
+        )}
+
         {screen === "landing" && (
           <section className="hero-section">
             <div className="hero-pill">

@@ -7,10 +7,12 @@ export function UserHistoryModal({ isOpen, onClose, username, defaultAvatar }) {
   const [profile, setProfile] = useState(null);
   const [historyData, setHistoryData] = useState({ totalAttempts: 0, history: [] });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (isOpen && username) {
       setLoading(true);
+      setError(null);
       Promise.all([
         getUserProfileApi(username),
         getUserHistoryApi(username)
@@ -20,6 +22,9 @@ export function UserHistoryModal({ isOpen, onClose, username, defaultAvatar }) {
           if (hist) {
             setHistoryData(hist);
           }
+        })
+        .catch((err) => {
+          setError(err.message || "Backend service is not working.");
         })
         .finally(() => setLoading(false));
     }
@@ -67,6 +72,11 @@ export function UserHistoryModal({ isOpen, onClose, username, defaultAvatar }) {
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>
             <Loader2 size={32} className="spin-loader" style={{ margin: "0 auto 1rem auto" }} />
             <p>Fetching evaluation logs for {username}...</p>
+          </div>
+        ) : error ? (
+          <div style={{ padding: "2.5rem 1rem", textAlign: "center", color: "var(--accent-red, #ef4444)" }}>
+            <p style={{ fontWeight: 700, fontSize: "1.05rem", marginBottom: "0.5rem" }}>⚠️ Backend Service Not Reachable</p>
+            <p style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>{error}</p>
           </div>
         ) : (
           <div>

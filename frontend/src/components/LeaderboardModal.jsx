@@ -5,12 +5,15 @@ import { getLeaderboardApi } from "../services/api";
 export function LeaderboardModal({ isOpen, onClose, onSelectEngineer }) {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
       setLoading(true);
+      setError(null);
       getLeaderboardApi()
         .then((data) => setLeaderboard(data || []))
+        .catch((err) => setError(err.message || "Backend service is not working."))
         .finally(() => setLoading(false));
     }
   }, [isOpen]);
@@ -38,6 +41,11 @@ export function LeaderboardModal({ isOpen, onClose, onSelectEngineer }) {
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>
             <Loader2 size={32} className="spin-loader" style={{ margin: "0 auto 1rem auto" }} />
             <p>Loading leaderboard rankings...</p>
+          </div>
+        ) : error ? (
+          <div style={{ padding: "2.5rem 1rem", textAlign: "center", color: "var(--accent-red, #ef4444)" }}>
+            <p style={{ fontWeight: 700, fontSize: "1.05rem", marginBottom: "0.5rem" }}>⚠️ Backend Service Not Reachable</p>
+            <p style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>{error}</p>
           </div>
         ) : (
           <div style={{ maxHeight: "400px", overflowY: "auto" }}>
