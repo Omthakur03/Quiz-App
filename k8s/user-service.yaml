@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: quiz-app
+  labels:
+    app: user-service
+    app.kubernetes.io/part-of: quiz-app
+    app.kubernetes.io/component: backend
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+        app.kubernetes.io/part-of: quiz-app
+        app.kubernetes.io/component: backend
+    spec:
+      containers:
+        - name: user-service
+          image: 345483430684.dkr.ecr.ap-south-1.amazonaws.com/quiz-app/user-service:latest
+          ports:
+            - containerPort: 8001
+              name: http
+          env:
+            - name: PORT
+              value: "8001"
+            - name: AWS_REGION
+              value: "ap-south-1"
+            - name: USERS_TABLE
+              value: "UsersTable"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: AWS_SECRET_ACCESS_KEY
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+          # Liveness: process alive, independent of DynamoDB reachability.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # Readiness: reflects a real DynamoDB call succeeding - if
+          # DynamoDB/IAM auth is unreachable, this pod is pulled from the
+          # Service's endpoints without being killed and restarted.
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: quiz-app
+  labels:
+    app: user-service
+    app.kubernetes.io/part-of: quiz-app
+spec:
+  type: ClusterIP
+  selector:
+    app: user-service
+  ports:
+    - port: 8001
+      targetPort: 8001
+      protocol: TCP
