@@ -24,9 +24,6 @@ spec:
         app.kubernetes.io/part-of: quiz-app
         app.kubernetes.io/component: backend
     spec:
-      # serviceAccountName: quiz-app-sa   # only needed if/when this service
-      # moves to IRSA - see the note in k8s/secrets.yaml. Not required for
-      # the current explicit-credentials setup below.
       containers:
         - name: result-service
           image: 345483430684.dkr.ecr.ap-south-1.amazonaws.com/quiz-app/result-service:latest
