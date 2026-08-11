@@ -8,72 +8,107 @@ A high-performance, responsive microservices-based quiz application built for De
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Frontend (React 19 + Vite)"]
-        UI["React SPA"]
+    subgraph Client ["Frontend Layer (CloudFront + S3)"]
+        UI["React 19 SPA (Vite)"]
     end
 
-    subgraph Gateway ["API Gateway Layer"]
-        GW["API Gateway Service\n(Port 8000 / api.quiz.mzsk.fun)"]
+    subgraph Ingress ["Ingress & Load Balancing"]
+        NLB["AWS Network Load Balancer (NLB)\n(Port 443 HTTPS / ACM SSL)"]
     end
 
-    subgraph Services ["Backend Microservices"]
-        US["User Service\n(Port 8001)"]
-        QS["Quiz Service\n(Port 8002)"]
-        RS["Result Service\n(Port 8003)"]
+    subgraph Kubernetes ["AWS EKS Cluster (quiz-app namespace)"]
+        GW["API Gateway Service\n(2 Replicas | Port 8000)"]
+        US["User Service\n(2 Replicas | Port 8001)"]
+        QS["Quiz Service\n(2 Replicas | Port 8002)"]
+        RS["Result Service\n(2 Replicas | Port 8003)"]
     end
 
     subgraph Database ["AWS Cloud Storage"]
-        DDB1[("DynamoDB: Users Table")]
-        DDB2[("DynamoDB: Questions Table")]
-        DDB3[("DynamoDB: QuizResults Table")]
+        DDB1[("DynamoDB: UsersTable")]
+        DDB2[("DynamoDB: QuestionsTable")]
+        DDB3[("DynamoDB: QuizResultsTable")]
     end
 
-    UI -->|REST APIs| GW
-    GW -->|/api/users| US
-    GW -->|/api/quizzes| QS
-    GW -->|/api/results & /api/leaderboard| RS
+    UI -->|HTTPS REST APIs| NLB
+    NLB -->|Target Group| GW
+    GW -->|http://user-service:8001| US
+    GW -->|http://quiz-service:8002| QS
+    GW -->|http://result-service:8003| RS
 
-    US -->|IAM / SDK| DDB1
-    QS -->|IAM / SDK| DDB2
-    RS -->|IAM / SDK| DDB3
+    US -->|AWS SDK v3| DDB1
+    QS -->|AWS SDK v3| DDB2
+    RS -->|AWS SDK v3| DDB3
     RS -->|PUT /api/users/:username/stats| US
 ```
 
 ---
 
-## 🌐 Production Domain & Deployment
+## 🌐 Production Domains & Infrastructure
 
+- **Frontend Application**: Hosted on AWS S3 & distributed globally via AWS CloudFront CDN.
 - **Production API Base URL**: `https://api.quiz.mzsk.fun/api`
 - **Gateway Health Endpoint**: `https://api.quiz.mzsk.fun/health`
-- **Route Namespace**: All API routes use `/api/...` (without `/v1` prefix).
+- **Kubernetes Platform**: AWS Elastic Kubernetes Service (EKS) in `ap-south-1`.
 
 ---
 
-## 🔍 Frontend Application Analysis
+## ☸️ Kubernetes Infrastructure & Manifests (`k8s/`)
+
+The application is deployed on **AWS EKS** inside the `quiz-app` namespace with zero-downtime rolling updates and automated health checks.
+
+| Manifest File | Resource Type | Description & Features |
+| :--- | :--- | :--- |
+| **[`k8s/00-namespace.yaml`](file:///e:/DevOps-Quiz-Project/k8s/00-namespace.yaml)** | `Namespace` | Defines the isolated `quiz-app` namespace for all resources. |
+| **`k8s/secrets.yaml`** | `Secret` | Contains AWS credentials (`quiz-app-secrets`). *(Ignored via `.gitignore`)* |
+| **[`k8s/api-gateway-service.yaml`](file:///e:/DevOps-Quiz-Project/k8s/api-gateway-service.yaml)** | `Deployment` & `Service` | 2 Replicas, AWS NLB (Internet-facing), ACM SSL Certificate termination on port 443, rolling update strategy (`maxSurge: 1`). |
+| **[`k8s/user-service.yaml`](file:///e:/DevOps-Quiz-Project/k8s/user-service.yaml)** | `Deployment` & `Service` | 2 Replicas, ClusterIP service (`:8001`), `/health` liveness probe, and `/ready` DynamoDB connectivity probe. |
+| **[`k8s/quiz-service.yaml`](file:///e:/DevOps-Quiz-Project/k8s/quiz-service.yaml)** | `Deployment` & `Service` | 2 Replicas, ClusterIP service (`:8002`), `/health` and `/ready` health probes. |
+| **[`k8s/result-service.yaml`](file:///e:/DevOps-Quiz-Project/k8s/result-service.yaml)** | `Deployment` & `Service` | 2 Replicas, ClusterIP service (`:8003`), `/health` and `/ready` health probes. |
+
+---
+
+## 🔄 CI/CD Automation Workflows (`.github/workflows/`)
+
+All code changes trigger automated GitHub Actions CI/CD workflows:
+
+1. **Frontend Deployment (`frontend-deploy.yml`)**:
+   - Triggers on pushes to `frontend/**`.
+   - Builds production bundle (`vite build`).
+   - Syncs static assets to AWS S3 bucket (`aws s3 sync --delete`).
+   - Invalidates AWS CloudFront CDN cache (`aws cloudfront create-invalidation --paths "/*"`).
+
+2. **Microservices Automated EKS Deployments**:
+   - [`api-gateway-service.yml`](file:///e:/DevOps-Quiz-Project/.github/workflows/api-gateway-service.yml), [`user-service.yml`](file:///e:/DevOps-Quiz-Project/.github/workflows/user-service.yml), [`quiz-service.yml`](file:///e:/DevOps-Quiz-Project/.github/workflows/quiz-service.yml), [`result-service.yml`](file:///e:/DevOps-Quiz-Project/.github/workflows/result-service.yml).
+   - Builds Docker container images and pushes tagged versions to **AWS ECR**.
+   - Authenticates to AWS EKS (`aws eks update-kubeconfig`).
+   - Applies Kubernetes manifests (`kubectl apply -f k8s/`).
+   - Triggers rolling restarts (`kubectl rollout restart`) and waits for deployment rollout status verification (`kubectl rollout status`).
+
+---
+
+## 🔍 Frontend Application Details
 
 The frontend is a modern Single Page Application (SPA) built using **React 19**, **Vite**, **Lucide React** icons, and **Canvas Confetti**.
 
-### Key Frontend Views & Components
+### Key Components
 
 | Component / File | Purpose & Responsibilities | Backend Integration Point |
 | :--- | :--- | :--- |
-| **`App.jsx`** | Central state orchestrator for landing screen, quiz screen, and results screen. | Coordinates API calls through client services. |
-| **`Navbar.jsx`** | Clean header navigation with direct modal trigger for global rankings and user profile history. | Triggers Leaderboard fetch. |
-| **`UsernameModal.jsx`** | Onboarding modal where engineers select an avatar (`⚡`, `🚀`, `🥷`, `🐳`, `🏗️`, `🛡️`) and handle. Enforces unique handle selection. | `POST /api/users` (User Service) |
-| **`QuizCard.jsx`** | Main assessment container. Runs 25-second per-question timers, option selections, progress bar, and user answer tracking. | `GET /api/quizzes/random` (Quiz Service) |
-| **`ResultsView.jsx`** | Displays accuracy score %, time elapsed, rank standing, celebratory confetti (≥80%), shareable snippet, and itemized answer review. | `POST /api/results` (Result Service) |
+| **`App.jsx`** | Central state orchestrator for landing screen, quiz screen, results screen, and global error banners. | Coordinates API calls through client services. |
+| **`Navbar.jsx`** | Header navigation with branding and direct modal triggers for rankings and user profile history. | Triggers Leaderboard fetch. |
+| **`UsernameModal.jsx`** | Onboarding modal where engineers select an avatar (`⚡`, `🚀`, `🥷`, `🐳`, `🏗️`, `🛡️`) and handle. | `POST /api/users` (User Service) |
+| **`QuizCard.jsx`** | Assessment container with 25-second question timers, option selections, and progress tracking. | `GET /api/quizzes/random` (Quiz Service) |
+| **`ResultsView.jsx`** | Displays accuracy score %, time elapsed, rank standing, celebratory confetti (≥80%), and answer review. | `POST /api/results` (Result Service) |
 | **`LeaderboardModal.jsx`**| Displays the global Hall of Fame table sorted by highest score and fastest completion time. | `GET /api/leaderboard` (Result Service) |
-| **`UserHistoryModal.jsx`**| Displays historical assessment attempt logs, accuracy %, total evaluations taken, and highest score earned by engineer. | `GET /api/users/:username` & `GET /api/results/user/:username` |
+| **`UserHistoryModal.jsx`**| Displays historical assessment attempt logs, accuracy %, total evaluations taken, and highest score earned. | `GET /api/users/:username` & `GET /api/results/user/:username` |
 
 ---
 
 ## ⚙️ Microservices Specification
 
-The microservices architecture under `/backend` includes four services:
-
 ### 1. 🛡️ API Gateway Service (`backend/api-gateway-service`)
 - **Role**: Central entry point for all frontend client traffic.
-- **Target Port**: `8000` (Local) / `https://api.quiz.mzsk.fun` (AWS)
+- **Target Port**: `8000` (Local) / `https://api.quiz.mzsk.fun` (AWS NLB)
 - **Path Proxies**:
   - `/api/users` → User Service (`:8001`)
   - `/api/quizzes` → Quiz Service (`:8002`)
@@ -120,65 +155,6 @@ AWS DynamoDB serves as the serverless, highly available NoSQL database layer.
    └───────────────────────┴───────────────────────┴────────────────────────┘
 ```
 
-### Table 1: `UsersTable`
-Stores engineer profile details and lifetime performance metrics.
-
-- **Partition Key (PK)**: `user_id` (String, UUID v4)
-- **Global Secondary Index (GSI)**: `UsernameIndex` (`username` String)
-
-```json
-{
-  "user_id": "usr_9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
-  "username": "AlexCloudDev",
-  "avatar": "⚡",
-  "created_at": "2026-08-07T14:32:00Z",
-  "last_active_at": "2026-08-10T10:15:11Z",
-  "total_quizzes": 12,
-  "highest_score": 5
-}
-```
-
-### Table 2: `QuestionsTable`
-Stores the DevOps skill evaluation question pool.
-
-- **Partition Key (PK)**: `question_id` (String, e.g., `q_docker_001`)
-
-```json
-{
-  "question_id": "q_k8s_002",
-  "category": "Kubernetes",
-  "question": "In Kubernetes, which controller object ensures that a specified number of pod replicas are running across nodes at any given time?",
-  "options": [
-    "ReplicaSet",
-    "IngressController",
-    "DaemonSet",
-    "ConfigMap"
-  ],
-  "correct_option": 0,
-  "explanation": "A ReplicaSet ensures that a specified number of pod replicas are running at any given time."
-}
-```
-
-### Table 3: `QuizResultsTable`
-Stores attempt outcomes and powers global ranking leaderboards.
-
-- **Partition Key (PK)**: `result_id` (String, UUID v4)
-
-```json
-{
-  "result_id": "res_8f3a1290-e2b4-4c12-a890-7d312bc89123",
-  "username": "AlexCloudDev",
-  "avatar": "⚡",
-  "score": 5,
-  "total": 5,
-  "timeTaken": 34,
-  "percentage": 100,
-  "date": "2026-08-10",
-  "created_at": "2026-08-10T10:15:10Z",
-  "status": "COMPLETED"
-}
-```
-
 ---
 
 ## 📡 REST API Specifications
@@ -204,24 +180,30 @@ Stores attempt outcomes and powers global ranking leaderboards.
 
 ```
 DevOps-Quiz-Project/
-├── README.md                      # Architecture & Microservices Documentation
-├── .gitignore                     # Git Exclusion Rules
+├── README.md                      # Complete System & Infrastructure Documentation
+├── .gitignore                     # Git Exclusion Rules (includes k8s/secrets.yaml)
 ├── DevOps_Quiz_API.postman_collection.json # API Testing Collection
-├── frontend/                      # React 19 + Vite Web Application
-│   ├── .env                       # Frontend Environment Variables
-│   ├── .env.example               # Frontend Environment Example
-│   ├── src/
-│   │   ├── components/            # UI Components (Navbar, QuizCard, ResultsView, etc.)
-│   │   ├── services/              # API Client Service (`api.js`)
-│   │   ├── utils/                 # Leaderboard utilities
-│   │   ├── App.jsx                # Layout & view routing
-│   │   └── main.jsx               # React entry point
-│   └── vite.config.js
+├── .github/workflows/             # GitHub Actions CI/CD Workflows
+│   ├── frontend-deploy.yml        # Build, S3 Sync & CloudFront Invalidation
+│   ├── api-gateway-service.yml    # ECR Build + EKS Rollout
+│   ├── user-service.yml           # ECR Build + EKS Rollout
+│   ├── quiz-service.yml           # ECR Build + EKS Rollout
+│   └── result-service.yml         # ECR Build + EKS Rollout
+├── k8s/                           # Kubernetes Deployment Manifests
+│   ├── 00-namespace.yaml          # quiz-app Namespace definition
+│   ├── secrets.yaml               # Kubernetes Secret (AWS credentials)
+│   ├── api-gateway-service.yaml   # AWS NLB + Ingress Gateway Deployment
+│   ├── user-service.yaml          # User Service Deployment & ClusterIP
+│   ├── quiz-service.yaml          # Quiz Service Deployment & ClusterIP
+│   └── result-service.yaml        # Result Service Deployment & ClusterIP
+├── frontend/                      # React 19 + Vite Web Client
+│   ├── src/                       # Components, Services, & App Layout
+│   └── public/                    # Static Assets & SVG Favicon
 └── backend/                       # Microservices Directory
-    ├── api-gateway-service/       # Reverse proxy API Gateway (Port 8000)
-    ├── user-service/              # User registration & stats persistence (Port 8001)
-    ├── quiz-service/              # Question pool & server grading (Port 8002)
-    └── result-service/            # Results processing & leaderboard (Port 8003)
+    ├── api-gateway-service/       # Express Proxy Gateway (Port 8000)
+    ├── user-service/              # User Service (Port 8001)
+    ├── quiz-service/              # Quiz Service (Port 8002)
+    └── result-service/            # Result Service (Port 8003)
 ```
 
 ---

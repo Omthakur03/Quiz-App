@@ -17,6 +17,13 @@ build/
 backend/*/.env
 frontend/.env
 
+# Kubernetes Secrets & AWS Credentials
+k8s/secrets.yaml
+k8s/secret*.yaml
+k8s/*secrets*.yaml
+*.pem
+*.key
+
 # Logs & debugging
 logs/
 *.log
