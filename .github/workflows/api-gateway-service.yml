@@ -40,9 +40,7 @@ jobs:
               with:
                 context: ./backend/${{ env.SERVICE }}
                 push: true
-                tags: |
-                    ${{ env.ECR_REGISTRY }}/${{env.SERVICE}}:${{ steps.vars.outputs.image_tag }}
-                    ${{env.ECR_REGISTRY}}/${{ env.SERVICE }}:latest
+                tags: ${{env.ECR_REGISTRY}}/${{ env.SERVICE }}:latest
 
     deploy:
         needs: build-and-push

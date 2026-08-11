@@ -22,7 +22,14 @@ app.use((req, res, next) => {
 });
 
 // Health check endpoint
-app.get("/health", async (req, res) => {
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    gateway: "UP"
+  });
+});
+
+
+app.get("/health/dependencies", async (req, res) => {
   const checkService = async (url) => {
     try {
       const response = await fetch(`${url}/health`);
