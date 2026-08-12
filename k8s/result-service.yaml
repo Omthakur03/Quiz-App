@@ -37,6 +37,8 @@ spec:
               value: "ap-south-1"
             - name: RESULTS_TABLE
               value: "QuizResultsTable"
+            - name: USER_SERVICE_URL
+              value: "http://user-service:8001"
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:

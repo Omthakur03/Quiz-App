@@ -721,29 +721,32 @@ body {
 .rank-pill.other { background: var(--bg-cream); color: var(--text-muted); }
 
 .review-card {
-  padding: 0.85rem;
-  background: var(--bg-cream);
-  border: 1px solid var(--border-light);
+  padding: 0.9rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
   border-radius: var(--radius-md);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.85rem;
+  color: #0f172a;
 }
 
 .review-card.correct-card {
-  border-left: 3px solid #10b981;
+  border-left: 4px solid #10b981;
+  background: #f0fdf4;
 }
 
 .review-card.wrong-card {
-  border-left: 3px solid #ef4444;
+  border-left: 4px solid #ef4444;
+  background: #fef2f2;
 }
 
 .review-explanation {
   margin-top: 0.5rem;
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  font-size: 0.83rem;
+  color: #1e293b;
   background: #ffffff;
-  padding: 0.4rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-light);
+  border: 1px solid #cbd5e1;
 }
 
 @keyframes fadeIn {

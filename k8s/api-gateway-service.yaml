@@ -81,7 +81,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: HTTP
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: /health
     service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "8000"
-    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:ap-south-1:345483430684:certificate/e10662fa-4e8f-4c3e-8589-c6b9921a255b"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:ap-south-1:345483430684:certificate/d078a8f1-26f2-4047-8000-e6d4ea0ab9f0"
     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
 spec:
   type: LoadBalancer

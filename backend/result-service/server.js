@@ -124,11 +124,18 @@ const handleSaveResult = async (req, res) => {
     // Notify user-service to update highest_score, total_quizzes, and last_active_at in DynamoDB UsersTable
     if (resultEntry.username && resultEntry.username !== "Anonymous Engineer") {
       try {
-        await fetch(`${USER_SERVICE_URL}/users/${encodeURIComponent(resultEntry.username)}/stats`, {
+        const notifyUrl = `${USER_SERVICE_URL}/users/${encodeURIComponent(resultEntry.username)}/stats`;
+        console.log(`[RESULT SERVICE] Notifying user-service at ${notifyUrl} with score=${resultEntry.score}...`);
+        const notifyRes = await fetch(notifyUrl, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ score: resultEntry.score })
         });
+        if (notifyRes.ok) {
+          console.log(`[RESULT SERVICE] Successfully updated user stats for ${resultEntry.username}`);
+        } else {
+          console.warn(`[RESULT SERVICE WARNING] user-service returned ${notifyRes.status} on stats update`);
+        }
       } catch (err) {
         console.warn("Failed to notify user-service of quiz completion:", err.message);
       }
@@ -173,6 +180,7 @@ const handleGetUserHistory = async (req, res) => {
     const { username } = req.params;
     let userResults = [];
 
+    // 1. Try GSI Query first
     try {
       const queryRes = await docClient.send(
         new QueryCommand({
@@ -182,13 +190,38 @@ const handleGetUserHistory = async (req, res) => {
           ExpressionAttributeValues: { ":u": username }
         })
       );
-      if (queryRes.Items) {
+      if (queryRes.Items && queryRes.Items.length > 0) {
         userResults = queryRes.Items;
       }
     } catch (err) {
-      console.warn("DynamoDB query failed for user results, filtering memory store:", err.message);
+      console.warn("DynamoDB GSI Query failed for user results, falling back to ScanCommand:", err.message);
+    }
+
+    // 2. Fallback ScanCommand if GSI query returned 0 items or failed
+    if (userResults.length === 0) {
+      try {
+        const scanRes = await docClient.send(
+          new ScanCommand({
+            TableName: RESULTS_TABLE,
+            FilterExpression: "username = :u",
+            ExpressionAttributeValues: { ":u": username }
+          })
+        );
+        if (scanRes.Items && scanRes.Items.length > 0) {
+          userResults = scanRes.Items;
+        }
+      } catch (scanErr) {
+        console.warn("DynamoDB Scan failed for user results:", scanErr.message);
+      }
+    }
+
+    // 3. Fallback memory store if DynamoDB returned 0 items
+    if (userResults.length === 0) {
       userResults = inMemoryResults.filter(r => r.username === username);
     }
+
+    // Sort user results by date/created_at DESC
+    userResults.sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
 
     res.json({
       username,

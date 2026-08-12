@@ -59,14 +59,15 @@ export default function App() {
     setIsLoading(true);
     setAppError(null);
     try {
-      // Evaluate submission (server-side or local fallback)
+      // Evaluate submission (server-side evaluation)
       const evaluation = await submitQuizAnswersApi({
         questions,
-        selectedAnswers: quizSummary.answers ? quizSummary.answers.reduce((acc, item, idx) => {
-          acc[idx] = item.selectedOption;
-          return acc;
-        }, {}) : {},
-        answers: quizSummary.answers,
+        answers: quizSummary.answers ? quizSummary.answers.map((item, idx) => ({
+          question_id: item.question_id || item.id || questions[idx]?.question_id || questions[idx]?.id,
+          id: item.question_id || item.id || questions[idx]?.question_id || questions[idx]?.id,
+          question: item.question || questions[idx]?.question,
+          selectedOption: item.selectedOption
+        })) : [],
         timeTaken: quizSummary.timeTaken
       });
 

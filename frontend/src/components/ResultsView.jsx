@@ -168,47 +168,57 @@ export function ResultsView({ resultData, user, onRetakeQuiz, onOpenHistory }) {
             </h3>
 
             <div>
-              {answers.map((item, idx) => (
-                <div key={idx} className={`review-card ${item.isCorrect ? "correct-card" : "wrong-card"}`}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.3rem" }}>
-                    <span style={{ fontSize: "0.75rem", color: "var(--accent-gold)", fontWeight: 600 }}>
-                      {item.category}
-                    </span>
-                    {item.isCorrect ? (
-                      <span style={{ color: "var(--accent-sage)", fontSize: "0.78rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.2rem" }}>
-                        <CheckCircle size={14} /> Correct
+              {answers.map((item, idx) => {
+                const userChoiceText = (item.options && item.selectedOption !== null && item.selectedOption !== undefined) 
+                  ? item.options[item.selectedOption] 
+                  : "Skipped";
+                const correctChoiceText = (item.options && item.correctOption !== undefined)
+                  ? item.options[item.correctOption]
+                  : "N/A";
+
+                return (
+                  <div key={idx} className={`review-card ${item.isCorrect ? "correct-card" : "wrong-card"}`}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.35rem" }}>
+                      <span style={{ fontSize: "0.78rem", color: "var(--accent-gold-dark)", fontWeight: 700 }}>
+                        {item.category || "DevOps"}
                       </span>
-                    ) : (
-                      <span style={{ color: "var(--accent-rose)", fontSize: "0.78rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.2rem" }}>
-                        <XCircle size={14} /> Incorrect
+                      {item.isCorrect ? (
+                        <span style={{ color: "#059669", fontSize: "0.8rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                          <CheckCircle size={15} /> Correct
+                        </span>
+                      ) : (
+                        <span style={{ color: "#dc2626", fontSize: "0.8rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                          <XCircle size={15} /> Incorrect
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.95rem", marginBottom: "0.5rem", lineHeight: 1.4 }}>
+                      {idx + 1}. {item.question}
+                    </div>
+
+                    <div style={{ fontSize: "0.85rem", color: "#334155", marginBottom: "0.25rem" }}>
+                      <strong style={{ color: "#1e293b" }}>Your Answer:</strong>{" "}
+                      <span style={{ color: item.isCorrect ? "#059669" : "#dc2626", fontWeight: 600 }}>
+                        {userChoiceText}
                       </span>
+                    </div>
+
+                    {!item.isCorrect && (
+                      <div style={{ fontSize: "0.85rem", color: "#059669", marginBottom: "0.25rem" }}>
+                        <strong style={{ color: "#1e293b" }}>Correct Answer:</strong>{" "}
+                        <span style={{ fontWeight: 600 }}>{correctChoiceText}</span>
+                      </div>
+                    )}
+
+                    {item.explanation && (
+                      <div className="review-explanation">
+                        💡 <strong style={{ color: "#0f172a" }}>Explanation:</strong> {item.explanation}
+                      </div>
                     )}
                   </div>
-
-                  <div style={{ fontWeight: 600, color: "#fff", fontSize: "0.9rem", marginBottom: "0.4rem" }}>
-                    {idx + 1}. {item.question}
-                  </div>
-
-                  <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: "0.2rem" }}>
-                    <strong>Your Answer:</strong>{" "}
-                    <span style={{ color: item.isCorrect ? "var(--accent-sage)" : "var(--accent-rose)" }}>
-                      {item.selectedOption !== null ? item.options[item.selectedOption] : "Skipped"}
-                    </span>
-                  </div>
-
-                  {!item.isCorrect && (
-                    <div style={{ fontSize: "0.82rem", color: "var(--accent-sage)" }}>
-                      <strong>Correct Answer:</strong> {item.options[item.correctOption]}
-                    </div>
-                  )}
-
-                  {item.explanation && (
-                    <div className="review-explanation">
-                      💡 <strong>Explanation:</strong> {item.explanation}
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

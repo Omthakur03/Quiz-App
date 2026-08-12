@@ -115,7 +115,13 @@ const handleSubmitQuiz = async (req, res) => {
 
     answers.forEach((ans, idx) => {
       const qId = ans.question_id || ans.id;
-      const questionItem = questionMap.get(qId) || allQuestions[idx] || {};
+      let questionItem = (qId && questionMap.get(qId)) || null;
+      if (!questionItem && ans.question) {
+        questionItem = allQuestions.find(q => q.question === ans.question);
+      }
+      if (!questionItem) {
+        questionItem = allQuestions[idx] || {};
+      }
 
       const correctOpt = questionItem.correct_option !== undefined ? questionItem.correct_option : questionItem.correct;
       const isCorrect = ans.selectedOption === correctOpt;
@@ -123,7 +129,7 @@ const handleSubmitQuiz = async (req, res) => {
       if (isCorrect) score += 1;
 
       answerBreakdown.push({
-        question_id: qId,
+        question_id: qId || questionItem.question_id,
         question: questionItem.question || ans.question,
         category: questionItem.category || ans.category || "DevOps",
         options: questionItem.options || ans.options || [],

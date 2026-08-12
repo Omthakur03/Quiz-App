@@ -64,6 +64,8 @@ export function QuizCard({ questions = [], user, onFinishQuiz }) {
       const isCorrect = selected === q.correct;
       if (isCorrect) score += 1;
       return {
+        question_id: q.question_id || q.id,
+        id: q.question_id || q.id,
         question: q.question,
         category: q.category,
         options: q.options,
