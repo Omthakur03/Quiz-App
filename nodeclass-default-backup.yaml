@@ -1,0 +1,104 @@
+apiVersion: eks.amazonaws.com/v1
+kind: NodeClass
+metadata:
+  annotations:
+    eks.amazonaws.com/nodeclass-hash: "17638971277352118168"
+    eks.amazonaws.com/nodeclass-hash-version: v2
+  creationTimestamp: "2026-08-11T11:03:18Z"
+  finalizers:
+  - eks.amazonaws.com/termination
+  generation: 1
+  labels:
+    app.kubernetes.io/managed-by: eks
+  name: default
+  resourceVersion: "2884966"
+  uid: 5ec5cb68-87a4-4f34-aef6-e2e70ddf0b24
+spec:
+  ephemeralStorage:
+    iops: 3000
+    size: 80Gi
+    throughput: 125
+  networkPolicy: DefaultAllow
+  networkPolicyEventLogs: Disabled
+  role: AmazonEKSAutoNodeRole
+  securityGroupSelectorTerms:
+  - id: sg-042e6c089abe4ec13
+  snatPolicy: Random
+  subnetSelectorTerms:
+  - id: subnet-08837c0259cacaf73
+  - id: subnet-053af0989639d8250
+  - id: subnet-032c592807fc1ddf1
+  - id: subnet-084f0422a8b2c9963
+status:
+  conditions:
+  - lastTransitionTime: "2026-08-11T11:03:37Z"
+    message: ""
+    observedGeneration: 1
+    reason: SubnetsReady
+    status: "True"
+    type: SubnetsReady
+  - lastTransitionTime: "2026-08-11T11:03:37Z"
+    message: ""
+    observedGeneration: 1
+    reason: SecurityGroupsReady
+    status: "True"
+    type: SecurityGroupsReady
+  - lastTransitionTime: "2026-08-11T11:03:37Z"
+    message: ""
+    observedGeneration: 1
+    reason: PodSubnetsReady
+    status: "True"
+    type: PodSubnetsReady
+  - lastTransitionTime: "2026-08-11T11:03:37Z"
+    message: ""
+    observedGeneration: 1
+    reason: PodSecurityGroupsReady
+    status: "True"
+    type: PodSecurityGroupsReady
+  - lastTransitionTime: "2026-08-11T11:03:39Z"
+    message: ""
+    observedGeneration: 1
+    reason: InstanceProfileReady
+    status: "True"
+    type: InstanceProfileReady
+  - lastTransitionTime: "2026-08-11T11:03:39Z"
+    message: ""
+    observedGeneration: 1
+    reason: CapacityReservationsReady
+    status: "True"
+    type: CapacityReservationsReady
+  - lastTransitionTime: "2026-08-11T11:03:39Z"
+    message: ""
+    observedGeneration: 1
+    reason: PlacementGroupReady
+    status: "True"
+    type: PlacementGroupReady
+  - lastTransitionTime: "2026-08-11T11:03:47Z"
+    message: ""
+    observedGeneration: 1
+    reason: ValidationSucceeded
+    status: "True"
+    type: ValidationSucceeded
+  - lastTransitionTime: "2026-08-11T11:03:47Z"
+    message: ""
+    observedGeneration: 1
+    reason: Ready
+    status: "True"
+    type: Ready
+  instanceProfile: eks-ap-south-1-quiz-app-cluster-8653163946176310095
+  securityGroups:
+  - id: sg-042e6c089abe4ec13
+    name: eks-cluster-sg-quiz-app-cluster-359195946
+  subnets:
+  - id: subnet-08837c0259cacaf73
+    zone: ap-south-1a
+    zoneID: aps1-az1
+  - id: subnet-053af0989639d8250
+    zone: ap-south-1b
+    zoneID: aps1-az3
+  - id: subnet-084f0422a8b2c9963
+    zone: ap-south-1a
+    zoneID: aps1-az1
+  - id: subnet-032c592807fc1ddf1
+    zone: ap-south-1b
+    zoneID: aps1-az3

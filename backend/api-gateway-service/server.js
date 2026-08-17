@@ -2,7 +2,9 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { createProxyMiddleware } from "http-proxy-middleware";
+import client from "prom-client";
 
+const register = new client.Registry();
 dotenv.config();
 
 const app = express();
@@ -54,6 +56,24 @@ app.get("/health/dependencies", async (req, res) => {
       resultService
     }
   });
+});
+
+client.collectDefaultMetrics({
+  register
+});
+
+const httpRequestDuration = new client.Histogram({
+  name: "http_request_duration_seconds",
+  help: "HTTP request duration in seconds",
+  labelNames: ["method", "route", "status_code"],
+  buckets: [0.1, 0.3, 0.5, 1, 2, 5]
+});
+
+register.registerMetric(httpRequestDuration);
+
+app.get("/metrics", async (req, res) => {
+  res.set("Content-Type", register.contentType);
+  res.end(await register.metrics());
 });
 
 // Proxy routes using pathFilter at root level so Express does not strip the URL prefix
