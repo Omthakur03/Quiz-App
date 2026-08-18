@@ -27,6 +27,7 @@ spec:
       containers:
         - name: api-gateway-service
           image: 345483430684.dkr.ecr.ap-south-1.amazonaws.com/quiz-app/api-gateway-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
               name: http
